@@ -1,0 +1,16 @@
+{
+  "name": "accounts_nodejs",
+  "version": "1.0.0",
+  "description": "Um mini sistema bancario em node.js com interface via terminal",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "Dyego Henrique",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "inquirer": "^6.3.1"
+  }
+}
