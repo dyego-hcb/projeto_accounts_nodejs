@@ -16,6 +16,8 @@ function operation() {
           "Consultar Saldo",
           "Depositar",
           "Sacar",
+          "Transferir",
+          "Simular Emprestimo",
           "Sair",
         ],
       },
@@ -31,6 +33,10 @@ function operation() {
         deposit();
       } else if (action === "Sacar") {
         withdraw();
+      } else if (action === "Transferir") {
+        transfer();
+      } else if (action === "Simular Emprestimo") {
+        loanCalculator();
       } else if (action === "Sair") {
         console.log(chalk.bgBlue.black("Obrigado por usar o Accounts !"));
         process.exit();
@@ -138,7 +144,7 @@ function addAmount(accountName, amount) {
       chalk.bgRed.black("Ocorreu um erro, tente novamente mais tarde !")
     );
 
-    return deposit();
+    return;
   }
 
   accountData.balance = parseFloat(amount) + parseFloat(accountData.balance);
@@ -231,11 +237,11 @@ function removeAmount(accountName, amount) {
     console.log(
       chalk.bgRed.black("Ocorreu um erro, tente novamente mais tarde !")
     );
-    return withdraw();
+    return;
   }
   if (accountData.balance < amount) {
     console.log(chalk.bgRed.black("Valor indisponivel !!"));
-    return withdraw();
+    return;
   }
 
   accountData.balance = parseFloat(accountData.balance) - parseFloat(amount);
@@ -248,6 +254,105 @@ function removeAmount(accountName, amount) {
     }
   );
 
-  console.log(chalk.green(`Foi realizado um saque de R$ ${amount} da sua conta !`));
+  console.log(
+    chalk.green(`Foi realizado um saque de R$ ${amount} da sua conta !`)
+  );
   operation();
+}
+
+async function transfer() {
+  try {
+      const answer = await inquirer.prompt([
+          {
+              name: "accountName",
+              message: "Qual o nome da sua conta?",
+          },
+      ]);
+      const accountName = answer['accountName'];
+
+      if (!checkAccounts(accountName)) {
+          return transfer();
+      }
+
+      const answerTransfer = await inquirer.prompt([
+          {
+              name: "accountTransferName",
+              message: "Qual o nome da conta na qual deseja realizar a transferencia?",
+          },
+      ]);
+      const accountTransferName = answerTransfer['accountTransferName'];
+
+      if (!checkAccounts(accountTransferName)) {
+          return transfer();
+      }
+
+      const answerAmount = await inquirer.prompt([
+          {
+              name: "amount",
+              message: "Qual o valor da transferencia?",
+              validate: function (input) {
+                  const isValid = parseFloat(input);
+                  return isValid > 0 || "Por favor, insira um valor válido maior que 0.";
+              },
+          },
+      ]);
+      const amount = answerAmount['amount'];
+
+      const sourceAccountData = getAccount(accountName);
+
+      if (parseFloat(sourceAccountData.balance) < parseFloat(amount)) {
+          console.log(chalk.bgRed.black("Saldo insuficiente para a transferência!"));
+          return transfer();
+      }
+
+      removeAmount(accountName, amount);
+      addAmount(accountTransferName, amount);
+
+      console.log(chalk.bgGreen.black(`Transferência realizada com sucesso. Você transferiu R$ ${amount} de sua conta para a conta ${accountTransferName}`));
+  } catch (err) {
+      console.log(err);
+  }
+}
+
+
+function loanCalculator() {
+  inquirer
+    .prompt([
+      {
+        name: "accountName",
+        message: "Qual o nome da sua conta ?",
+      },
+    ])
+    .then((answer) => {
+      const accountName = answer["accountName"];
+
+      if (!checkAccounts(accountName)) {
+        return loanCalculator();
+      }
+      inquirer
+        .prompt([
+          {
+            name: "amount",
+            message: "Qual o valor do emprestimo para sua conta ?",
+          },
+        ])
+        .then((answer) => {
+          const amount = answer["amount"];
+          const accountData = getAccount(accountName);
+          var loan = 0;
+
+          if (accountData.balance >= 3000) {
+            loan = parseFloat(amount) * 1.05;
+          } else {
+            loan = parseFloat(amount) * 1.1;
+          }
+
+          console.log(
+            chalk.green(`O emprestimo de R$ ${amount} saira por R$ ${loan}`)
+          );
+          operation();
+        })
+        .catch((err) => console.log(err));
+    })
+    .catch((err) => console.log(err));
 }
